@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 // ... הקוד הקיים שלך ...
@@ -52,7 +55,7 @@ app.UseAuthorization(); // הוספת Middleware להרשאות
 // הוספת נתיב לרישום
 app.MapPost("/register", async (UserDto userDto, ToDoDbContext db) =>
 {
-    var user = new User { Username = userDto.Username, Password = userDto.Password }; // יש להוסיף Hashing לסיסמה
+    var user = new User { Username = userDto.Username, PasswordHash = userDto.Password }; // יש להוסיף Hashing לסיסמה
     db.Users.Add(user);
     await db.SaveChangesAsync();
     return Results.Ok();
@@ -61,7 +64,7 @@ app.MapPost("/register", async (UserDto userDto, ToDoDbContext db) =>
 // הוספת נתיב להזדהות
 app.MapPost("/login", async (UserDto userDto, ToDoDbContext db) =>
 {
-    var user = await db.Users.SingleOrDefaultAsync(x => x.Username == userDto.Username && x.Password == userDto.Password); // יש להוסיף Hashing לסיסמה
+    var user = await db.Users.SingleOrDefaultAsync(x => x.Username == userDto.Username && x.PasswordHash == userDto.Password); // יש להוסיף Hashing לסיסמה
     if (user == null) return Results.Unauthorized();
 
     var tokenHandler = new JwtSecurityTokenHandler();
