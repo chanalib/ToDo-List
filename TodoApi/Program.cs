@@ -1,160 +1,82 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Microsoft.AspNetCore.Authorization;
-using System.IdentityModel.Tokens.Jwt;
 
-
+// ... הקוד הקיים שלך ...
 
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
 
-// הוספת CORS
+// הוספת שירותי CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAllOrigins",
-        builder => builder.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
+    options.AddPolicy("AllowAll",
+        builder => builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 });
 
-
-// הוספת הגדרות JWT
-builder.Services.AddAuthentication(options =>
+// הוספת שירותי JWT
+var key = builder.Configuration["Jwt:Key"];
+builder.Services.AddAuthentication(x =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddJwtBearer(options =>
+.AddJwtBearer(x =>
 {
-    options.TokenValidationParameters = new TokenValidationParameters
+    x.RequireHttpsMetadata = false;
+    x.SaveToken = true;
+    x.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_secret_key")) // החלף במפתח סודי שלך
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+        ValidateIssuer = false,
+        ValidateAudience = false
     };
 });
-app.UseCors("AllowAllOrigins");
 
-app.MapGet("/tasks", [Authorize] async (ToDoDbContext db) =>
-    await db.Items.ToListAsync());
+// הוספת DbContext
+builder.Services.AddDbContext<ToDoDbContext>(opt =>
+    opt.UseMySql(builder.Configuration.GetConnectionString("ToDoDB"),
+                 new MySqlServerVersion(new Version(8, 0, 41))));
 
-app.UseAuthentication(); // הוספת Authentication pipeline
+var app = builder.Build();
 
-// הוספת endpoint להרשמה
-app.MapPost("/register", async (ToDoDbContext db, User user) =>
+app.UseCors("AllowAll");
+app.UseAuthentication(); // הוספת Middleware לאימות
+app.UseAuthorization(); // הוספת Middleware להרשאות
+
+// ... שאר הקוד הקיים שלך ...
+
+// הוספת נתיב לרישום
+app.MapPost("/register", async (UserDto userDto, ToDoDbContext db) =>
 {
-    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash); // hashing password
+    var user = new User { Username = userDto.Username, Password = userDto.Password }; // יש להוסיף Hashing לסיסמה
     db.Users.Add(user);
     await db.SaveChangesAsync();
-    return Results.Created($"/users/{user.Id}", user);
+    return Results.Ok();
 });
 
-// הוספת endpoint להתחברות
-app.MapPost("/login", async (ToDoDbContext db, User loginUser) =>
+// הוספת נתיב להזדהות
+app.MapPost("/login", async (UserDto userDto, ToDoDbContext db) =>
 {
-    var user = await db.Users.SingleOrDefaultAsync(u => u.Username == loginUser.Username);
-    if (user == null || !BCrypt.Net.BCrypt.Verify(loginUser.PasswordHash, user.PasswordHash))
+    var user = await db.Users.SingleOrDefaultAsync(x => x.Username == userDto.Username && x.Password == userDto.Password); // יש להוסיף Hashing לסיסמה
+    if (user == null) return Results.Unauthorized();
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var tokenKey = Encoding.UTF8.GetBytes(key);
+    var tokenDescriptor = new SecurityTokenDescriptor
     {
-        return Results.Unauthorized();
-    }
-
-    var token = GenerateJwtToken(user); // פונקציה ליצירת JWT
-    return Results.Ok(new { Token = token });
-});
-
-string GenerateJwtToken(User user)
-{
-    var claims = new[] { new Claim(JwtRegisteredClaimNames.Sub, user.Username) };
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("your_secret_key")); // החלף במפתח סודי שלך
-    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-    var token = new JwtSecurityToken(
-        issuer: null,
-        audience: null,
-        claims: claims,
-        expires: DateTime.Now.AddMinutes(30),
-        signingCredentials: creds);
-
-    return new JwtSecurityTokenHandler().WriteToken(token);
-}
-
-// הוספת Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-// הוספת ה-DbContext עם ה-Connection String
-builder.Services.AddDbContext<ToDoDbContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("ToDoDB"), 
-                     new MySqlServerVersion(new Version(8, 0, 21))));
-
-
-// הפעלת CORS
-app.UseCors("AllowAllOrigins");
-
-// הפעלת Swagger
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c => 
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-        c.RoutePrefix = string.Empty; // מאפשר גישה ל-Swagger ב-root URL
-    });
-}
-
-// הוספת משימה לדאטה בייס בעת הרצת התוכנית
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ToDoDbContext>();
-
-    // הוספת משימה לדוגמה
-    var newItem = new Item
-    {
-        Name = "Example Task",
-        IsComplete = false
+        Subject = new ClaimsIdentity(new Claim[]
+        {
+            new Claim(ClaimTypes.Name, user.Username)
+        }),
+        Expires = DateTime.UtcNow.AddDays(7),
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
     };
-
-    db.Items.Add(newItem);
-    await db.SaveChangesAsync(); // שמירת השינויים
-}
-
-app.MapGet("/tasks", async (ToDoDbContext db) =>
-    await db.Items.ToListAsync());
-
-app.MapPost("/tasks", async (ToDoDbContext db, Item item) =>
-{
-    db.Items.Add(item);
-    await db.SaveChangesAsync();
-    return Results.Created($"/tasks/{item.Id}", item);
-});
-
-app.MapPut("/tasks/{id}", async (int id, ToDoDbContext db, Item updatedItem) =>
-{
-    var item = await db.Items.FindAsync(id);
-    if (item is null) return Results.NotFound();
-
-    item.Name = updatedItem.Name;
-    item.IsComplete = updatedItem.IsComplete;
-
-    await db.SaveChangesAsync();
-    return Results.NoContent();
-});
-
-app.MapDelete("/tasks/{id}", async (int id, ToDoDbContext db) =>
-{
-    var item = await db.Items.FindAsync(id);
-    if (item is null) return Results.NotFound();
-
-    db.Items.Remove(item);
-    await db.SaveChangesAsync();
-    return Results.NoContent();
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    return Results.Ok(new { Token = tokenHandler.WriteToken(token) });
 });
 
 app.Run();

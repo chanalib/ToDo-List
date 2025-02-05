@@ -1,47 +1,63 @@
 import axios from 'axios';
 
-// הגדרת כתובת ה-API כ-default
-const apiUrl = "https://localhost:7271"; // ודא שהכתובת היא זו
+const apiUrl = "http://localhost:5073"; // הכתובת של ה-API שלך
 axios.defaults.baseURL = apiUrl;
 
 // הוספת interceptor לתפיסת שגיאות
 axios.interceptors.response.use(
-  response => response,
-  error => {
-    console.error('Error occurred:', error); // רושם את השגיאה ללוג
-    return Promise.reject(error);
-  }
-);
-axios.interceptors.response.use(
-  response => response,
-  error => {
-      if (error.response && error.response.status === 401) {
-          window.location.href = '/login'; // הפנה לדף התחברות
-      }
-      return Promise.reject(error);
-  }
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            // הפנה לדף הלוגין
+            window.location.href = '/login'; // הנח את הכתובת לדף הלוגין שלך
+        }
+        return Promise.reject(error);
+    }
 );
 
 export default {
-  getTasks: async () => {
-    const result = await axios.get('/items');    
-    return result.data;
-  },
+    getTasks: async () => {
+        const result = await axios.get(`/items`);
+        return result.data;
+    },
 
-  addTask: async (name) => {
-    console.log('addTask', name);
-    const result = await axios.post('/items', { name });
-    return result.data;
-  },
+    addTask: async(name) => {
+        console.log('addTask', name);
+        try {
+            const result = await axios.post(`/items`, { name });
+            return result.data;
+        } catch (error) {
+            console.error("Error adding task:", error.message);
+            throw error; // זרוק את השגיאה כדי שתוכל לטפל בה במקום אחר
+        }
+    },
 
-  setCompleted: async (id, isComplete) => {
-    console.log('setCompleted', { id, isComplete });
-    const result = await axios.put(`/items/${id}`, { isComplete });
-    return result.data;
-  },
+    setCompleted: async (id, isComplete) => {
+        console.log('setCompleted', { id, isComplete });
+        try {
+            const existingItemResponse = await axios.get(`/items/${id}`);
+            const existingItem = existingItemResponse.data;
 
-  deleteTask: async (id) => {
-    console.log('deleteTask', id);
-    await axios.delete(`/items/${id}`);
-  }
+            const updatedItem = {
+                name: existingItem.name,
+                isComplete: isComplete
+            };
+
+            const result = await axios.put(`/items/${id}`, updatedItem);
+            return result.data;
+        } catch (error) {
+            console.error("Error setting task completion:", error.message);
+            throw error;
+        }
+    },
+
+    deleteTask: async (id) => {
+        try {
+            await axios.delete(`/items/${id}`);
+            console.log('Task deleted successfully');
+        } catch (error) {
+            console.error("Error deleting task:", error.message);
+            throw error;
+        }
+    }
 };

@@ -6,14 +6,22 @@ function Auth() {
     const [password, setPassword] = useState("");
 
     const register = async () => {
-        await axios.post('/register', { username, password });
-        alert("User registered!");
+        try {
+            await axios.post('http://localhost:5073/register', { username, password });
+            alert("User registered!");
+        } catch (error) {
+            alert("Error registering user: " + error.response.data);
+        }
     };
 
     const login = async () => {
-        const response = await axios.post('/login', { username, password });
-        localStorage.setItem('token', response.data.token);
-        alert("Logged in!");
+        try {
+            const response = await axios.post('http://localhost:5073/login', { username, password });
+            localStorage.setItem('token', response.data.token);
+            alert("Logged in!");
+        } catch (error) {
+            alert("Error logging in: " + error.response.data);
+        }
     };
 
     return (
