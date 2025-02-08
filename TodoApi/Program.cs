@@ -1,84 +1,260 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+//using Microsoft.OpenApi.Models;
+//using Microsoft.AspNetCore.Mvc;
+//using TodoApi; // ודא ששם המרחב הוא נכון
+//using Microsoft.EntityFrameworkCore;
+
+//var builder = WebApplication.CreateBuilder(args);
+
+//// הוסף את שירותי ה-DbContext
+//builder.Services.AddDbContext<ToDoDbContext>(options =>
+//    options.UseMySql(builder.Configuration.GetConnectionString("ToDoDB"),
+//    new MySqlServerVersion(new Version(8, 0, 41))));
+
+//// הוסף את שירותי ההרשאה
+//builder.Services.AddAuthorization(); // הוספת שירותי הרשאה
+
+//builder.Services.AddCors(opt => opt.AddPolicy("MyPolicy", policy =>
+//{
+//    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+//}));
+
+//builder.Services.AddEndpointsApiExplorer();
+
+//builder.Services.AddSwaggerGen(options =>
+//{
+//    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+//    {
+//        Scheme = "Bearer",
+//        BearerFormat = "JWT",
+//        In = ParameterLocation.Header,
+//        Name = "Authorization",
+//        Description = "Bearer Authentication with JWT Token",
+//        Type = SecuritySchemeType.Http
+//    });
+//    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+//    {
+//        {
+//            new OpenApiSecurityScheme
+//            {
+//                Reference = new OpenApiReference
+//                {
+//                    Id = "Bearer",
+//                    Type = ReferenceType.SecurityScheme
+//                }
+//            },
+//            new List<string>()
+//        }
+//    });
+//    options.SwaggerDoc("v1", new OpenApiInfo
+//    {
+//        Version = "v1",
+//        Title = "ToDo API",
+//        Description = "An ASP.NET Core Web API for managing ToDo items",
+//    });
+//});
+
+//var app = builder.Build();
+
+//app.UseSwagger();
+//app.UseSwaggerUI(options =>
+//{
+//    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+//    options.RoutePrefix = string.Empty;
+//});
+
+//app.UseCors("MyPolicy");
+//app.UseAuthorization(); // הוספת השורה הזו לשימוש בהרשאה
+
+//app.MapGet("/", () => "toDoListServer api is running ");
+//app.MapGet("/items", async (ToDoDbContext db) =>
+//{
+//    try
+//    {
+//        var items = await db.Items.ToListAsync();
+//        return Results.Ok(items);
+//    }
+//    catch (Exception ex)
+//    {
+//        return Results.Problem("An error occurred while retrieving items: " + ex.Message);
+//    }
+//});
+
+//app.MapPost("/items", async (ToDoDbContext db, [FromBody] Item item) =>
+//{
+//    try
+//    {
+//        db.Items.Add(item);
+//        await db.SaveChangesAsync();
+//        return Results.Created($"/items/{item.Id}", item);
+//    }
+//    catch (Exception ex)
+//    {
+//        return Results.Problem("An error occurred while adding the item: " + ex.Message);
+//    }
+//});
+
+//app.MapPut("/items/{id}", async (ToDoDbContext db, int id) =>
+//{
+//    try
+//    {
+//        var item = await db.Items.FindAsync(id);
+//        if (item is null) return Results.NotFound();
+
+//        item.IsComplete = !item.IsComplete;
+
+//        System.Console.WriteLine(item.IsComplete);
+//        await db.SaveChangesAsync();
+//        return Results.NoContent();
+//    }
+//    catch (Exception ex)
+//    {
+//        return Results.Problem("An error occurred while updating the item: " + ex.Message);
+//    }
+//});
+
+//app.MapDelete("/items/{id}", async (ToDoDbContext db, int id) =>
+//{
+//    try
+//    {
+//        var item = await db.Items.FindAsync(id);
+//        if (item is null) return Results.NotFound();
+
+//        db.Items.Remove(item);
+//        await db.SaveChangesAsync();
+//        return Results.NoContent();
+//    }
+//});
+
+//app.Run();
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Mvc;
+using TodoApi;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// הוספת שירותי CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder => builder
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader());
-});
+builder.Services.AddDbContext<ToDoDbContext>(options =>
+    options.UseMySql(builder.Configuration.GetConnectionString("ToDoDB"),
+    new MySqlServerVersion(new Version(8, 0, 41))));
 
-// הוספת שירותי JWT
-var key = builder.Configuration["Jwt:Key"];
-builder.Services.AddAuthentication(x =>
+builder.Services.AddCors(opt => opt.AddPolicy("MyPolicy", policy =>
 {
-    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(x =>
+    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+}));
+
+builder.Services.AddEndpointsApiExplorer();
+
+
+builder.Services.AddSwaggerGen(options =>
 {
-    x.RequireHttpsMetadata = false;
-    x.SaveToken = true;
-    x.TokenValidationParameters = new TokenValidationParameters
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Description = "Bearer Authentication with JWT Token",
+        Type = SecuritySchemeType.Http
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Id = "Bearer",
+                    Type = ReferenceType.SecurityScheme
+                }
+            },
+            new List<string>()
+        }
+    });
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "ToDo API",
+        Description = "An ASP.NET Core Web API for managing ToDo items",
+    });
 });
-
-// הוספת שירותי Authorization
-builder.Services.AddAuthorization(); // הוסף שורה זו
-
-// הוספת DbContext
-builder.Services.AddDbContext<ToDoDbContext>(opt =>
-    opt.UseMySql(builder.Configuration.GetConnectionString("ToDoDB"),
-                 new MySqlServerVersion(new Version(8, 0, 41))));
 
 var app = builder.Build();
 
-app.UseCors("AllowAll");
-app.UseAuthentication(); // הוספת Middleware לאימות
-app.UseAuthorization(); // הוספת Middleware להרשאות
-
-// הוספת נתיב לרישום
-app.MapPost("/register", async (UserDto userDto, ToDoDbContext db) =>
+// if (app.Environment.IsDevelopment())
+// {
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    var user = new User { Username = userDto.Username, PasswordHash = userDto.Password }; // יש להוסיף Hashing לסיסמה
-    db.Users.Add(user);
-    await db.SaveChangesAsync();
-    return Results.Ok();
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+    options.RoutePrefix = string.Empty;
 });
 
-// הוספת נתיב להזדהות
-app.MapPost("/login", async (UserDto userDto, ToDoDbContext db) =>
-{
-    var user = await db.Users.SingleOrDefaultAsync(x => x.Username == userDto.Username && x.PasswordHash == userDto.Password); // יש להוסיף Hashing לסיסמה
-    if (user == null) return Results.Unauthorized();
+// }
 
-    var tokenHandler = new JwtSecurityTokenHandler();
-    var tokenKey = Encoding.UTF8.GetBytes(key);
-    var tokenDescriptor = new SecurityTokenDescriptor
+app.UseCors("MyPolicy");
+app.MapGet("/", () => "toDoListServer api is running ");
+app.MapGet("/items", async (ToDoDbContext db) =>
+{
+    try
     {
-        Subject = new ClaimsIdentity(new Claim[]
-        {
-            new Claim(ClaimTypes.Name, user.Username)
-        }),
-        Expires = DateTime.UtcNow.AddDays(7),
-        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
-    };
-    var token = tokenHandler.CreateToken(tokenDescriptor);
-    return Results.Ok(new { Token = tokenHandler.WriteToken(token) });
+        var items = await db.Items.ToListAsync();
+        return Results.Ok(items);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("An error occurred while retrieving items: " + ex.Message);
+    }
 });
+
+app.MapPost("/items", async (ToDoDbContext db, [FromBody] Item item) =>
+{
+    try
+    {
+        db.Items.Add(item);
+        await db.SaveChangesAsync();
+        return Results.Created($"/items/{item.Id}", item);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("An error occurred while adding the item: " + ex.Message);
+    }
+});
+
+app.MapPut("/items/{id}", async (ToDoDbContext db, int id) =>
+{
+    try
+    {
+        var item = await db.Items.FindAsync(id);
+        if (item is null) return Results.NotFound();
+
+        item.IsComplete = !item.IsComplete;
+
+        System.Console.WriteLine(item.IsComplete);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("An error occurred while updating the item: " + ex.Message);
+    }
+});
+
+app.MapDelete("/items/{id}", async (ToDoDbContext db, int id) =>
+{
+    try
+    {
+        var item = await db.Items.FindAsync(id);
+        if (item is null) return Results.NotFound();
+
+        db.Items.Remove(item);
+        await db.SaveChangesAsync();
+        return Results.NoContent();
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem("An error occurred while deleting the item: " + ex.Message);
+    }
+});
+app.MapGet("/",()=>"API is running");
 
 app.Run();
