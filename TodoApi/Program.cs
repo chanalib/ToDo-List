@@ -5,7 +5,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-// ... הקוד הקיים שלך ...
 
 var builder = WebApplication.CreateBuilder(args);
 
