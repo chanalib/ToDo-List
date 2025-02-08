@@ -63,11 +63,22 @@ app.MapPost("/register", async (UserDto userDto, ToDoDbContext db) =>
 // הוספת נתיב להזדהות
 app.MapPost("/login", async (UserDto userDto, ToDoDbContext db) =>
 {
-var user = await db.Users.SingleOrDefaultAsync(x => x.Username == userDto.Username && x.PasswordHash == userDto.Password); // יש להוסיף Hashing לסיסמה
-if (user == null) return Results.Unauthorized();
+    var user = await db.Users.SingleOrDefaultAsync(x => x.Username == userDto.Username && x.PasswordHash == userDto.Password); // יש להוסיף Hashing לסיסמה
+    if (user == null) return Results.Unauthorized();
 
-var tokenHandler = new JwtSecurityTokenHandler();
-var tokenKey = Encoding.UTF8.GetBytes(key);
-var tokenDescriptor = new SecurityTokenDescriptor
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var tokenKey = Encoding.UTF8.GetBytes(key);
+    var tokenDescriptor = new SecurityTokenDescriptor
+    {
+        Subject = new ClaimsIdentity(new Claim[]
+        {
+            new Claim(ClaimTypes.Name, user.Username)
+        }),
+        Expires = DateTime.UtcNow.AddDays(7),
+        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+    };
+    var token = tokenHandler.CreateToken(tokenDescriptor);
+    return Results.Ok(new { Token = tokenHandler.WriteToken(token) });
+});
 
-
+app.Run();
