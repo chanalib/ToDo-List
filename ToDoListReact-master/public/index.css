@@ -9,7 +9,7 @@ button {
     padding: 0;
     border: 0;
     background: none;
-    font-size: 100%;
+    font-size: 80%;
     vertical-align: baseline;
     font-family: inherit;
     color: inherit;
@@ -20,7 +20,7 @@ button {
 }
 
 body {
-    font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font: 10px 'Helvetica Neue', Helvetica, Arial, sans-serif;
     line-height: 1.4em;
     background: #eaeaea url('bg.png');
     color: #4d4d4d;
@@ -41,7 +41,7 @@ input[type="checkbox"] {
 #todoapp {
     background: #fff;
     background: rgba(255, 255, 255, 0.9);
-    margin: 130px 0 40px 0;
+    margin: 150px 0 40px 0;
     border: 1px solid #ccc;
     position: relative;
     border-top-left-radius: 2px;
