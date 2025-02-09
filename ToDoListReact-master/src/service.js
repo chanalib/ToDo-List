@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const apiUrl = "http://localhost:5086"; // הכתובת של ה-API שלך
+const apiUrl =  process.env.REACT_APP_API_URL;
 axios.defaults.baseURL = apiUrl;
+
 
 // הוספת interceptor לתפיסת שגיאות
 axios.interceptors.response.use(
