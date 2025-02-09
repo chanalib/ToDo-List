@@ -1,25 +1,22 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-preview AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-preview AS build
+ENV ASPNETCORE_URLS=http://+:80
+
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG configuration=Release
 WORKDIR /src
-<<<<<<< HEAD
-COPY ["TodoApi.csproj", "."]
-RUN dotnet restore "./TodoApi.csproj"
-=======
-COPY ["TodoApi.csproj", "TodoApi/"]
-RUN dotnet restore "TodoApi/TodoApi.csproj"
->>>>>>> b41ef6f3b2c70a6af7450c87db738ed4144ab73c
+COPY ["TodoApi.csproj", "./"]
+RUN dotnet restore "TodoApi.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "TodoApi.csproj" -c Release -o /app/build
+RUN dotnet build "TodoApi.csproj" -c $configuration -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "TodoApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
+ARG configuration=Release
+RUN dotnet publish "TodoApi.csproj" -c $configuration -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
