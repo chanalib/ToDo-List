@@ -1,20 +1,7 @@
 import axios from 'axios';
 
-const apiUrl =  process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_API_URL;
 axios.defaults.baseURL = apiUrl;
-
-
-// הוספת interceptor לתפיסת שגיאות
-axios.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response && error.response.status === 401) {
-            // הפנה לדף הלוגין
-            window.location.href = '/login'; // הנח את הכתובת לדף הלוגין שלך
-        }
-        return Promise.reject(error);
-    }
-);
 
 export default {
     getTasks: async () => {
@@ -33,10 +20,9 @@ export default {
         }
     },
 
-    setCompleted: async (id, isComplete,name) => {
-        await axios.put(`/items/${id}`, {name:name,isComplete: isComplete });
-      },
-    
+    setCompleted: async (id, isComplete, name) => {
+        await axios.put(`/items/${id}`, { name: name, isComplete: isComplete });
+    },
 
     deleteTask: async (id) => {
         try {

@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-//using System.IdentityModel.Tokens.Jwt;
-using Microsoft.IdentityModel.Tokens;
 using TodoApi;
 
 
@@ -9,7 +7,6 @@ using TodoApi;
 public class ToDoDbContext : DbContext
 {
     public DbSet<Item> Items { get; set; }
-    //public DbSet<User> Users { get; set; } // הוספת DbSet למשתמשים
 
     public ToDoDbContext(DbContextOptions<ToDoDbContext> options) : base(options)
     {
