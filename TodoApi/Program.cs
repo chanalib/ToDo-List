@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ToDoDbContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("ToDoDB"),
+    options.UseMySql(builder.Configuration.GetConnectionString("my_db"),
     new MySqlServerVersion(new Version(8, 0, 41))));
 
 builder.Services.AddCors(opt => opt.AddPolicy("MyPolicy", policy =>

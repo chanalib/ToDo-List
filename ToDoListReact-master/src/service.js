@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const apiUrl = "http://localhost:5073"; // הכתובת של ה-API שלך
+const apiUrl = "http://localhost:5086"; // הכתובת של ה-API שלך
 axios.defaults.baseURL = apiUrl;
 
 // הוספת interceptor לתפיסת שגיאות
@@ -17,14 +17,14 @@ axios.interceptors.response.use(
 
 export default {
     getTasks: async () => {
-        const result = await axios.get(`/items`);
+        const result = await axios.get('/items');
         return result.data;
     },
 
     addTask: async(name) => {
         console.log('addTask', name);
         try {
-            const result = await axios.post(`/items`, { name });
+            const result = await axios.post('/items', { name });
             return result.data;
         } catch (error) {
             console.error("Error adding task:", error.message);
@@ -32,24 +32,10 @@ export default {
         }
     },
 
-    setCompleted: async (id, isComplete) => {
-        console.log('setCompleted', { id, isComplete });
-        try {
-            const existingItemResponse = await axios.get(`/items/${id}`);
-            const existingItem = existingItemResponse.data;
-
-            const updatedItem = {
-                name: existingItem.name,
-                isComplete: isComplete
-            };
-
-            const result = await axios.put(`/items/${id}`, updatedItem);
-            return result.data;
-        } catch (error) {
-            console.error("Error setting task completion:", error.message);
-            throw error;
-        }
-    },
+    setCompleted: async (id, isComplete,name) => {
+        await axios.put(`/items/${id}`, {name:name,isComplete: isComplete });
+      },
+    
 
     deleteTask: async (id) => {
         try {
