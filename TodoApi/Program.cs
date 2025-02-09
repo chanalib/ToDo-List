@@ -1,4 +1,3 @@
-
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using TodoApi;
@@ -55,17 +54,17 @@ var app = builder.Build();
 
 // if (app.Environment.IsDevelopment())
 // {
-app.UseSwagger();
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-    options.RoutePrefix = string.Empty;
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = string.Empty;
+    });
 
 // }
 
 app.UseCors("MyPolicy");
-app.MapGet("/", () => "toDoListServer api is running ");
+app.MapGet("/",()=>"toDoListServer api is running ");
 app.MapGet("/items", async (ToDoDbContext db) =>
 {
     try
@@ -100,7 +99,7 @@ app.MapPut("/items/{id}", async (ToDoDbContext db, int id) =>
         var item = await db.Items.FindAsync(id);
         if (item is null) return Results.NotFound();
 
-        item.IsComplete = !item.IsComplete;
+        item.IsComplete=!item.IsComplete;
 
         System.Console.WriteLine(item.IsComplete);
         await db.SaveChangesAsync();
@@ -128,6 +127,6 @@ app.MapDelete("/items/{id}", async (ToDoDbContext db, int id) =>
         return Results.Problem("An error occurred while deleting the item: " + ex.Message);
     }
 });
-app.MapGet("/",()=>"API is running");
+//app.MapGet("/",()=>"API is running");
 
 app.Run();
