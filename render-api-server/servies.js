@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 // API של Render
 const RENDER_API_URL = "https://api.render.com/v1/services";
-const API_KEY = "rnd_0D9yy66u6B2he2PkI9rOabikKrQk";
+const API_KEY = "rnd_jhz1qQPp7nlsQifkQux7x9EcpLgQ";
 
 // נקודת קצה שמחזירה את רשימת האפליקציות
 app.get("/", async (req, res) => {
